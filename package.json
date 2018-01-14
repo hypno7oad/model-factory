@@ -1,0 +1,59 @@
+{
+  "name": "cosmodog-dl",
+  "version": "0.0.1",
+  "description": "A data layer",
+  "main": "Data.js",
+  "dependencies": {
+    "ajv": "^6.0.1"
+  },
+  "devDependencies": {
+    "babel-core": "^6.18.2",
+    "babel-eslint": "^8.1.2",
+    "babel-loader": "^7.1.1",
+    "babel-plugin-module-resolver": "^2.7.1",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-decorators": "^6.24.1",
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "babel-preset-env": "^1.6.1",
+    "enzyme": "^3.0.0",
+    "eslint": "^4.14.0",
+    "eslint-config-standard": "^11.0.0-beta.0",
+    "eslint-loader": "^1.9.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-promise": "^3.6.0",
+    "eslint-plugin-react": "^7.5.1",
+    "eslint-plugin-standard": "^3.0.1",
+    "http-server": "^0.11.1",
+    "jsdoc": "^3.5.5",
+    "jsdoc-to-json-schema": "^0.1.9",
+    "lodash": "^4.17.4",
+    "webpack": "^3.10.0"
+  },
+  "scripts": {
+    "build": "WEBPACK_ENV=build webpack",
+    "dev": "WEBPACK_ENV=dev webpack --progress --colors --watch",
+    "lint": "eslint src",
+    "lint:src": "eslint src --fix",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hypno7oad/cosmodog-dl.git"
+  },
+  "keywords": [
+    "data",
+    "model",
+    "datamodel",
+    "data",
+    "layer",
+    "datalayer"
+  ],
+  "author": "Robert Curl <cosmodogsoftware@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/hypno7oad/cosmodog-dl/issues"
+  },
+  "homepage": "https://github.com/hypno7oad/cosmodog-dl#readme"
+}
