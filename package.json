@@ -2,7 +2,7 @@
   "name": "cosmodog-dl",
   "version": "0.0.1",
   "description": "A data layer",
-  "main": "./src/Data.js",
+  "main": "./build/cosmodog-dl.js",
   "dependencies": {
     "ajv": "^6.0.1"
   },
