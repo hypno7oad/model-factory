@@ -24,12 +24,11 @@ const noUpdate = () => { throw new ReferenceError('Update service not implemente
 const noDelete = () => { throw new ReferenceError('Delete service not implemented') }
 const noList = () => { throw new ReferenceError('List service not implemented') }
 
-function modelFactory (config) {
-  const {
-    schema = {},
-    services = {}
-  } = config
+function modelFactory (schema, config = {}) {
+  const {services = {}} = config
   const {properties = {}} = schema
+
+  if (schema === undefined) throw new ReferenceError('A schema is required')
 
   class Model {
     constructor (...args) {
