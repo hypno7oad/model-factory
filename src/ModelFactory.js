@@ -32,7 +32,7 @@ function modelFactory (schema, config = {}) {
 
   class Model {
     constructor (...args) {
-      let [values] = args
+      let [values = {}] = args
 
       if (values instanceof Model) values = values[DATA]
 

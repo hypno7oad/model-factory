@@ -67,7 +67,8 @@ function modelFactory(schema) {
       args[_key] = arguments[_key];
     }
 
-    var values = args[0];
+    var _args$ = args[0],
+        values = _args$ === undefined ? {} : _args$;
 
 
     if (values instanceof Model) values = values[DATA];
