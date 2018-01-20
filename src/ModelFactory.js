@@ -25,10 +25,10 @@ const noDelete = () => { throw new ReferenceError('Delete service not implemente
 const noList = () => { throw new ReferenceError('List service not implemented') }
 
 function modelFactory (schema, config = {}) {
+  if (schema === undefined) throw new ReferenceError('A schema is required')
+
   const {services = {}} = config
   const {properties = {}} = schema
-
-  if (schema === undefined) throw new ReferenceError('A schema is required')
 
   class Model {
     constructor (...args) {
@@ -86,7 +86,7 @@ function modelFactory (schema, config = {}) {
     ? (...args) => services.list.apply(undefined, args).then(records => records.map(instantiator))
     : noList
 
-  Model[SCHEMA] = config.schema
+  Model[SCHEMA] = schema
 
   Object.entries(properties).forEach(tuple => {
     if (tuple[1].default) Model.prototype[tuple[0]] = tuple[1].default
