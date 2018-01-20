@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.SYMBOLS = undefined;
-exports.factory = factory;
 
 var _ajv = require('ajv');
 
@@ -49,7 +48,7 @@ var noList = function noList() {
   throw new ReferenceError('List service not implemented');
 };
 
-function factory(config) {
+function modelFactory(config) {
   var _config$schema = config.schema,
       schema = _config$schema === undefined ? {} : _config$schema,
       _config$services = config.services,
@@ -164,3 +163,5 @@ var SYMBOLS = exports.SYMBOLS = {
   SCHEMA: SCHEMA,
   DATA: DATA
 };
+
+exports.default = modelFactory;

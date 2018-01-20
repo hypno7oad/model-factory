@@ -25,7 +25,7 @@
     "eslint-plugin-standard": "^3.0.1"
   },
   "scripts": {
-    "build": "babel ./src/Data.js -o ./build/model-factory.js",
+    "build": "babel ./src/ModelFactory.js -o ./build/model-factory.js",
     "dev": "WEBPACK_ENV=dev webpack --progress --colors --watch",
     "lint": "eslint src",
     "lint:src": "eslint src --fix",
