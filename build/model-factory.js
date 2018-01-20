@@ -48,10 +48,12 @@ var noList = function noList() {
   throw new ReferenceError('List service not implemented');
 };
 
-function modelFactory(config) {
-  var _config$schema = config.schema,
-      schema = _config$schema === undefined ? {} : _config$schema,
-      _config$services = config.services,
+function modelFactory(schema) {
+  var config = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+  if (schema === undefined) throw new ReferenceError('A schema is required');
+
+  var _config$services = config.services,
       services = _config$services === undefined ? {} : _config$services;
   var _schema$properties = schema.properties,
       properties = _schema$properties === undefined ? {} : _schema$properties;
@@ -149,7 +151,7 @@ function modelFactory(config) {
     });
   } : noList;
 
-  Model[SCHEMA] = config.schema;
+  Model[SCHEMA] = schema;
 
   Object.entries(properties).forEach(function (tuple) {
     if (tuple[1].default) Model.prototype[tuple[0]] = tuple[1].default;else if ('defaultToNull' in config) Model.prototype[tuple[0]] = null;
