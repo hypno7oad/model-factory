@@ -1,6 +1,6 @@
 {
   "name": "cosmodog-dl",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A data layer",
   "main": "./build/cosmodog-dl.js",
   "dependencies": {

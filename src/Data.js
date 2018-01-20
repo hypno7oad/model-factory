@@ -8,33 +8,39 @@ const C = Symbol('CREATE')
 const R = Symbol('READ')
 const U = Symbol('UPDATE')
 const D = Symbol('DELETE')
-const S = Symbol('SEARCH')
+const L = Symbol('LIST')
 
 const SCHEMA = Symbol('SCHEMA')
 const DATA = Symbol('DATA')
-const noop = () => undefined
 
 function validationReducer (validations, tuple) {
   validations[tuple[0]] = ajv.compile(tuple[1])
   return validations
 }
 
+const noCreate = () => { throw new ReferenceError('Create service not implemented') }
+const noRead = () => { throw new ReferenceError('Read service not implemented') }
+const noUpdate = () => { throw new ReferenceError('Update service not implemented') }
+const noDelete = () => { throw new ReferenceError('Delete service not implemented') }
+const noList = () => { throw new ReferenceError('List service not implemented') }
+
 export function factory (config) {
   const {
-    constructor = noop,
     schema = {},
     services = {}
   } = config
   const {properties = {}} = schema
 
-  class Datum {
-    constructor (values = {}) {
-      if (constructor) constructor.apply(values)
+  class Model {
+    constructor (...args) {
+      let [values] = args
+
+      if (values instanceof Model) values = values[DATA]
 
       // validate the initial values
-      if (!Datum.validate(values)) throw new Error(Datum.validate.errors[0].message)
+      if (!Model.validate(values)) throw new Error(Model.validate.errors[0].message)
 
-      this[DATA] = Object.create(Datum.prototype)
+      this[DATA] = Object.create(Model.prototype)
 
       Object.entries(properties).forEach(tuple => {
         const key = tuple[0]
@@ -45,7 +51,7 @@ export function factory (config) {
           configurable: false,
           get: isConst ? () => property.const : () => this[DATA][key],
           set: (value) => {
-            if (!Datum.validations[key](value)) throw new Error(Datum.validations[key].errors[0].message)
+            if (!Model.validations[key](value)) throw new Error(Model.validations[key].errors[0].message)
             this[DATA][key] = value
           }
         }
@@ -54,31 +60,45 @@ export function factory (config) {
       })
 
       Object.entries(values).forEach(tuple => (this[tuple[0]] = tuple[1]))
-      console.log('not "Object.keys(values).forEach(key => (this[key] = values[key]))"')
     }
-
-    static validations = Object.entries(properties).reduce(validationReducer, {})
-    static validate = ajv.compile(schema)
   }
 
-  Datum.prototype[C] = services.create || (() => { throw new ReferenceError('Create service not implemented') })
-  Datum.prototype[R] = services.read || (() => { throw new ReferenceError('Read service not implemented') })
-  Datum.prototype[U] = services.update || (() => { throw new ReferenceError('Update service not implemented') })
-  Datum.prototype[D] = services.delete || (() => { throw new ReferenceError('Delete service not implemented') })
-  Datum.prototype[S] = services.search || (() => { throw new ReferenceError('Search service not implemented') })
+  Model.validations = Object.entries(properties).reduce(validationReducer, {})
+  Model.validate = ajv.compile(schema)
 
-  Datum.prototype[SCHEMA] = config.schema
+  const instantiator = record => new Model(record)
+  Model[C] = (services.create instanceof Function)
+    ? (...args) => services.create.apply(undefined, args).then(instantiator)
+    : noCreate
+
+  Model[R] = (services.read instanceof Function)
+    ? (...args) => services.read.apply(undefined, args).then(instantiator)
+    : noRead
+
+  Model[U] = (services.update instanceof Function)
+    ? (...args) => services.update.apply(undefined, args).then(instantiator)
+    : noUpdate
+
+  Model[D] = (services.delete instanceof Function)
+    ? (...args) => services.delete.apply(undefined, args).then(instantiator)
+    : noDelete
+
+  Model[L] = (services.list instanceof Function)
+    ? (...args) => services.list.apply(undefined, args).then(records => records.map(instantiator))
+    : noList
+
+  Model[SCHEMA] = config.schema
 
   Object.entries(properties).forEach(tuple => {
-    if (tuple[1].default) Datum.prototype[tuple[0]] = tuple[1].default
-    else if ('defaultToNull' in config) Datum.prototype[tuple[0]] = null
+    if (tuple[1].default) Model.prototype[tuple[0]] = tuple[1].default
+    else if ('defaultToNull' in config) Model.prototype[tuple[0]] = null
   })
 
-  return Datum
+  return Model
 }
 
 export const SYMBOLS = {
-  SERVICES: {C, R, U, D, S},
+  SERVICES: {C, R, U, D, L},
   SCHEMA: SCHEMA,
   DATA: DATA
 }
