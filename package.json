@@ -1,5 +1,5 @@
 {
-  "name": "model-factory",
+  "name": "cosmodog-model-factory",
   "version": "0.0.4",
   "description": "A factory for json-schema validated data model.",
   "main": "./build/model-factory.js",
