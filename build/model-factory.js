@@ -77,6 +77,7 @@ function modelFactory(schema) {
     if (!Model.validate(values)) throw new Error(Model.validate.errors[0].message);
 
     this[DATA] = Object.create(Model.prototype);
+    this[SCHEMA] = schema;
 
     Object.entries(properties).forEach(function (tuple) {
       var key = tuple[0];
