@@ -1,22 +1,20 @@
 {
-  "name": "cosmodog-dl",
-  "version": "0.0.3",
-  "description": "A data layer",
-  "main": "./build/cosmodog-dl.js",
+  "name": "model-factory",
+  "version": "0.0.4",
+  "description": "A factory for json-schema validated data model.",
+  "main": "./build/model-factory.js",
   "dependencies": {
     "ajv": "^6.0.1"
   },
   "devDependencies": {
     "babel-core": "^6.18.2",
     "babel-eslint": "^8.1.2",
-    "babel-loader": "^7.1.1",
     "babel-plugin-module-resolver": "^2.7.1",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-decorators": "^6.24.1",
     "babel-plugin-transform-decorators-legacy": "^1.3.4",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-env": "^1.6.1",
-    "enzyme": "^3.0.0",
     "eslint": "^4.14.0",
     "eslint-config-standard": "^11.0.0-beta.0",
     "eslint-loader": "^1.9.0",
@@ -24,16 +22,10 @@
     "eslint-plugin-node": "^5.2.1",
     "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-react": "^7.5.1",
-    "eslint-plugin-standard": "^3.0.1",
-    "http-server": "^0.11.1",
-    "jsdoc": "^3.5.5",
-    "jsdoc-to-json-schema": "^0.1.9",
-    "lodash": "^4.17.4",
-    "webpack": "^3.10.0"
+    "eslint-plugin-standard": "^3.0.1"
   },
   "scripts": {
-    "babel": "babel ./src/Data.js -o ./build/cosmodog-dl.js",
-    "build": "WEBPACK_ENV=build webpack",
+    "build": "babel ./src/Data.js -o ./build/model-factory.js",
     "dev": "WEBPACK_ENV=dev webpack --progress --colors --watch",
     "lint": "eslint src",
     "lint:src": "eslint src --fix",
@@ -41,7 +33,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hypno7oad/cosmodog-dl.git"
+    "url": "git+https://github.com/hypno7oad/model-factory.git"
   },
   "keywords": [
     "data",
@@ -54,7 +46,7 @@
   "author": "Robert Curl <cosmodogsoftware@gmail.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/hypno7oad/cosmodog-dl/issues"
+    "url": "https://github.com/hypno7oad/model-factory/issues"
   },
-  "homepage": "https://github.com/hypno7oad/cosmodog-dl#readme"
+  "homepage": "https://github.com/hypno7oad/model-factory#readme"
 }
