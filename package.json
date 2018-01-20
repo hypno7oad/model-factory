@@ -1,6 +1,6 @@
 {
   "name": "cosmodog-dl",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A data layer",
   "main": "./build/cosmodog-dl.js",
   "dependencies": {
@@ -32,6 +32,7 @@
     "webpack": "^3.10.0"
   },
   "scripts": {
+    "babel": "babel ./src/Data.js -o ./build/cosmodog-dl.js",
     "build": "WEBPACK_ENV=build webpack",
     "dev": "WEBPACK_ENV=dev webpack --progress --colors --watch",
     "lint": "eslint src",
