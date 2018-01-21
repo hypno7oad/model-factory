@@ -65,18 +65,20 @@ function modelFactory (schema, config = {}) {
         const definition = {
           enumerable: true,
           configurable: false,
-          get: isConst ? () => property.const : () => this[DATA][key],
-          set: (value) => {
+          get: isConst
+            ? () => property.const
+            : () => this[DATA][key],
+          set: value => {
             if (!Model.validations[key](value)) {
               if (onValidationErrors) return onValidationErrors(Model.validations[key].errors)
               throw new Error(Model.validations[key].errors[0].message)
             }
 
-            // If immutability is configured, then always replace this[DATA} with a new object
+            // If immutability is configured, then always replace this[DATA] with a new object
             /* This can be useful in systems like React & Angular, where optimizations can occur
                by dirty checking by identity (===) vs deep equality checks */
             if (isImmutable) {
-              const values = Object.assign(Object.create(Model.prototype), {...this[DATA]})
+              const values = Object.assign(Object.create(Model.prototype), this[DATA])
               values[key] = value
               this[DATA] = values
             } else {
