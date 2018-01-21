@@ -54,7 +54,7 @@ function modelFactory(schema) {
       methods = _config$methods === undefined ? {} : _config$methods,
       defaultToUndefined = config.defaultToUndefined,
       onValidationErrors = config.onValidationErrors,
-      isImmutable = config.isImmutable;
+      enforceImmutableData = config.enforceImmutableData;
   var _schema$properties = schema.properties,
       properties = _schema$properties === undefined ? {} : _schema$properties;
 
@@ -115,10 +115,10 @@ function modelFactory(schema) {
           // If immutability is configured, then always replace this[DATA] with a new object
           /* This can be useful in systems like React & Angular, where optimizations can occur
              by dirty checking by identity (===) vs deep equality checks */
-          if (isImmutable) {
-            var _values = Object.assign(Object.create(Model.prototype), _this[DATA]);
-            _values[key] = value;
-            _this[DATA] = _values;
+          if (enforceImmutableData) {
+            var data = Object.assign(Object.create(Model.prototype), _this[DATA]);
+            data[key] = value;
+            _this[DATA] = data;
           } else {
             _this[DATA][key] = value;
           }
@@ -163,11 +163,11 @@ function modelFactory(schema) {
   }, {});
 
   // Expose any defined CRUDL services at a top level
-  Model[C] = Model[SERVICES].create;
-  Model[R] = Model[SERVICES].read;
-  Model[U] = Model[SERVICES].update;
-  Model[D] = Model[SERVICES].delete;
-  Model[L] = Model[SERVICES].list;
+  if (Model[SERVICES].create) Model[C] = Model[SERVICES].create;
+  if (Model[SERVICES].read) Model[R] = Model[SERVICES].read;
+  if (Model[SERVICES].update) Model[U] = Model[SERVICES].update;
+  if (Model[SERVICES].delete) Model[D] = Model[SERVICES].delete;
+  if (Model[SERVICES].list) Model[L] = Model[SERVICES].list;
 
   Model[SCHEMA] = schema;
 

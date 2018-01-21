@@ -33,7 +33,7 @@ function modelFactory (schema, config = {}) {
     defaultToUndefined,
     // This is a function used to transform and return errors instead of throwing Errors
     onValidationErrors,
-    isImmutable
+    enforceImmutableData
   } = config
   const {properties = {}} = schema
 
@@ -77,10 +77,10 @@ function modelFactory (schema, config = {}) {
             // If immutability is configured, then always replace this[DATA] with a new object
             /* This can be useful in systems like React & Angular, where optimizations can occur
                by dirty checking by identity (===) vs deep equality checks */
-            if (isImmutable) {
-              const values = Object.assign(Object.create(Model.prototype), this[DATA])
-              values[key] = value
-              this[DATA] = values
+            if (enforceImmutableData) {
+              const data = Object.assign(Object.create(Model.prototype), this[DATA])
+              data[key] = value
+              this[DATA] = data
             } else {
               this[DATA][key] = value
             }
@@ -112,11 +112,11 @@ function modelFactory (schema, config = {}) {
   }, {})
 
   // Expose any defined CRUDL services at a top level
-  Model[C] = Model[SERVICES].create
-  Model[R] = Model[SERVICES].read
-  Model[U] = Model[SERVICES].update
-  Model[D] = Model[SERVICES].delete
-  Model[L] = Model[SERVICES].list
+  if (Model[SERVICES].create) Model[C] = Model[SERVICES].create
+  if (Model[SERVICES].read) Model[R] = Model[SERVICES].read
+  if (Model[SERVICES].update) Model[U] = Model[SERVICES].update
+  if (Model[SERVICES].delete) Model[D] = Model[SERVICES].delete
+  if (Model[SERVICES].list) Model[L] = Model[SERVICES].list
 
   Model[SCHEMA] = schema
 
