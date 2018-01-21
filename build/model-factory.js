@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.DATA = exports.SCHEMA = exports.METHODS = exports.SERVICES = exports.L = exports.D = exports.U = exports.R = exports.C = undefined;
+exports.DEFAULTS = exports.DATA = exports.SCHEMA = exports.METHODS = exports.L = exports.D = exports.U = exports.R = exports.C = exports.SERVICES = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -17,22 +17,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var ajv = new _ajv2.default({ allErrors: true });
 
-/**
- * Create Symbols to separate library props from data/usage props
- */
+// SERVICES are asyncronous and attached to the Model class
+var SERVICES = exports.SERVICES = Symbol('SERVICES');
+// These are special services, and will be exposed directly on the Model
 var C = exports.C = Symbol('CREATE');
 var R = exports.R = Symbol('READ');
 var U = exports.U = Symbol('UPDATE');
 var D = exports.D = Symbol('DELETE');
 var L = exports.L = Symbol('LIST');
-
-// SERVICES are asyncronous and attached to the Model class
-var SERVICES = exports.SERVICES = Symbol('SERVICES');
 // METHODS are syncronous and bound to each Model instance
 var METHODS = exports.METHODS = Symbol('METHODS');
 var SCHEMA = exports.SCHEMA = Symbol('SCHEMA');
 // The raw data behind our propertyDefinition proxies
 var DATA = exports.DATA = Symbol('DATA');
+// The defaults for every instance
+var DEFAULTS = exports.DEFAULTS = Symbol('DEFAULTS');
 
 function validationReducer(validations, keyValue) {
   var _keyValue = _slicedToArray(keyValue, 2),
@@ -55,8 +54,6 @@ function modelFactory(schema) {
       defaultToUndefined = config.defaultToUndefined,
       onValidationErrors = config.onValidationErrors,
       enforceImmutableData = config.enforceImmutableData;
-  var _schema$properties = schema.properties,
-      properties = _schema$properties === undefined ? {} : _schema$properties;
 
   var Model = function Model() {
     var _this = this;
@@ -78,9 +75,7 @@ function modelFactory(schema) {
     if (!Model.validate(values)) throw new Error(Model.validate.errors[0].message);
 
     // Expose the raw data
-    this[DATA] = Object.create(Model.prototype);
-    // Expose the schema through each instance
-    this[SCHEMA] = schema;
+    this[DATA] = Object.create(Model[DEFAULTS]);
 
     // If there are any methods in the configuration, then bind this to each instance
     this[METHODS] = Object.entries(methods).reduce(function (methods, keyValue) {
@@ -92,53 +87,80 @@ function modelFactory(schema) {
       return methods;
     }, {});
 
-    Object.entries(properties).forEach(function (keyValue) {
+    // Apply all initial values...
+    Object.entries(values).forEach(function (keyValue) {
       var _keyValue3 = _slicedToArray(keyValue, 2),
           key = _keyValue3[0],
-          property = _keyValue3[1];
-
-      var isConst = 'const' in property;
-      var definition = {
-        enumerable: true,
-        configurable: false,
-        get: isConst ? function () {
-          return property.const;
-        } : function () {
-          return _this[DATA][key];
-        },
-        set: function set(value) {
-          if (!Model.validations[key](value)) {
-            if (onValidationErrors) return onValidationErrors(Model.validations[key].errors);
-            throw new Error(Model.validations[key].errors[0].message);
-          }
-
-          // If immutability is configured, then always replace this[DATA] with a new object
-          /* This can be useful in systems like React & Angular, where optimizations can occur
-             by dirty checking by identity (===) vs deep equality checks */
-          if (enforceImmutableData) {
-            var data = Object.assign(Object.create(Model.prototype), _this[DATA]);
-            data[key] = value;
-            _this[DATA] = data;
-          } else {
-            _this[DATA][key] = value;
-          }
-        }
-      };
-
-      Object.defineProperty(_this, key, definition);
-    });
-
-    Object.entries(values).forEach(function (keyValue) {
-      var _keyValue4 = _slicedToArray(keyValue, 2),
-          key = _keyValue4[0],
-          value = _keyValue4[1];
+          value = _keyValue3[1];
 
       return _this[key] = value;
     });
   };
+  // Expose the schema through each instance
+
+
+  Model.prototype[SCHEMA] = schema;
+
+  var _schema$properties = schema.properties,
+      properties = _schema$properties === undefined ? {} : _schema$properties;
 
   Model.validations = Object.entries(properties).reduce(validationReducer, {});
   Model.validate = ajv.compile(schema);
+
+  Object.entries(properties).forEach(function (keyValue) {
+    var _keyValue4 = _slicedToArray(keyValue, 2),
+        key = _keyValue4[0],
+        property = _keyValue4[1];
+
+    var isConst = 'const' in property;
+    var definition = {
+      enumerable: true,
+      configurable: false,
+      get: isConst ? function () {
+        return property.const;
+      }
+      // We can't use arrow functions here because "this" would be set to the model-factory module object
+      // We can't use a pre-defined named function either, because the function relies on the closed over 'key' variable
+      : function () {
+        return this[DATA][key];
+      },
+      // We can't use arrow functions here because "this" would be set to the model-factory module object
+      // We can't use a pre-defined named function either, because the function relies on the closed over 'key' variable
+      set: function set(value) {
+        if (!Model.validations[key](value)) {
+          if (onValidationErrors) return onValidationErrors(Model.validations[key].errors);
+          throw new Error(Model.validations[key].errors[0].message);
+        }
+
+        // If immutability is configured, then always replace this[DATA] with a new object
+        /* This can be useful in systems like React & Angular, where optimizations can occur
+           by dirty checking by identity (===) vs deep equality checks */
+        if (enforceImmutableData) {
+          // Create a new object
+          var newData = Object.create(Model[DEFAULTS]);
+          // Apply all current values to it
+          Object.assign(newData, this[DATA]);
+          // Set the newValue for the intended property
+          newData[key] = value;
+          // Replace the old data object with the new one
+          this[DATA] = newData;
+        } else {
+          this[DATA][key] = value;
+        }
+      }
+    };
+
+    Object.defineProperty(Model.prototype, key, definition);
+  });
+
+  Model[DEFAULTS] = Object.entries(properties).reduce(function (defaults, keyValue) {
+    var _keyValue5 = _slicedToArray(keyValue, 2),
+        key = _keyValue5[0],
+        value = _keyValue5[1];
+
+    if (value.default) defaults[key] = value.default;else defaults[key] = defaultToUndefined ? undefined : null;
+    return defaults;
+  }, {});
 
   // If the response is an array, then apply the instantiator across all elements of the array
   // For non-Array responses, return a new Model using the response as the values parameter
@@ -149,9 +171,9 @@ function modelFactory(schema) {
   /* Wrap every service call, so that they run with the Model as its context
       and all responses being used to instantiate new instances of the Model */
   Model[SERVICES] = Object.entries(services).reduce(function (services, keyValue) {
-    var _keyValue5 = _slicedToArray(keyValue, 2),
-        key = _keyValue5[0],
-        value = _keyValue5[1];
+    var _keyValue6 = _slicedToArray(keyValue, 2),
+        key = _keyValue6[0],
+        value = _keyValue6[1];
 
     services[key] = function () {
       for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
@@ -170,14 +192,6 @@ function modelFactory(schema) {
   if (Model[SERVICES].list) Model[L] = Model[SERVICES].list;
 
   Model[SCHEMA] = schema;
-
-  Object.entries(properties).forEach(function (keyValue) {
-    var _keyValue6 = _slicedToArray(keyValue, 2),
-        key = _keyValue6[0],
-        value = _keyValue6[1];
-
-    if (value.default) Model.prototype[key] = value.default;else Model.prototype[key] = defaultToUndefined ? undefined : null;
-  });
 
   return Model;
 }
