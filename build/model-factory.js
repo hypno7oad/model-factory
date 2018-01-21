@@ -85,13 +85,14 @@ function modelFactory(schema) {
     this[SCHEMA] = schema;
 
     // If there are any methods in the configuration, then bind this to each instance
-    Object.entries(methods, function (keyValue) {
+    this[METHODS] = Object.entries(methods).reduce(function (methods, keyValue) {
       var _keyValue2 = _slicedToArray(keyValue, 2),
           key = _keyValue2[0],
           value = _keyValue2[1];
 
-      _this[METHODS][key] = value.bind(_this);
-    });
+      methods[key] = value.bind(_this);
+      return methods;
+    }, {});
 
     Object.entries(properties).forEach(function (keyValue) {
       var _keyValue3 = _slicedToArray(keyValue, 2),
@@ -149,19 +150,19 @@ function modelFactory(schema) {
 
   /* Wrap every service call, so that they run with the Model as its context
       and all responses being used to instantiate new instances of the Model */
-  Object.entries(services, function (keyValue) {
+  Model[SERVICES] = Object.entries(services).reduce(function (services, keyValue) {
     var _keyValue5 = _slicedToArray(keyValue, 2),
         key = _keyValue5[0],
         value = _keyValue5[1];
 
-    Model[SERVICES][key] = function () {
+    services[key] = function () {
       for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
         args[_key2] = arguments[_key2];
       }
 
       return value.apply(Model, args).then(instantiator);
     };
-  });
+  }, {});
 
   // Expose any defined CRUDL services at a top level
   Model[C] = Model[SERVICES].create;
