@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.SYMBOLS = undefined;
+exports.DATA = exports.SCHEMA = exports.METHODS = exports.SERVICES = exports.L = exports.D = exports.U = exports.R = exports.C = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -20,19 +20,19 @@ var ajv = new _ajv2.default({ allErrors: true });
 /**
  * Create Symbols to separate library props from data/usage props
  */
-var C = Symbol('CREATE');
-var R = Symbol('READ');
-var U = Symbol('UPDATE');
-var D = Symbol('DELETE');
-var L = Symbol('LIST');
+var C = exports.C = Symbol('CREATE');
+var R = exports.R = Symbol('READ');
+var U = exports.U = Symbol('UPDATE');
+var D = exports.D = Symbol('DELETE');
+var L = exports.L = Symbol('LIST');
 
 // SERVICES are asyncronous and attached to the Model class
-var SERVICES = Symbol('SERVICES');
+var SERVICES = exports.SERVICES = Symbol('SERVICES');
 // METHODS are syncronous and bound to each Model instance
-var METHODS = Symbol('METHODS');
-var SCHEMA = Symbol('SCHEMA');
+var METHODS = exports.METHODS = Symbol('METHODS');
+var SCHEMA = exports.SCHEMA = Symbol('SCHEMA');
 // The raw data behind our propertyDefinition proxies
-var DATA = Symbol('DATA');
+var DATA = exports.DATA = Symbol('DATA');
 
 function validationReducer(validations, keyValue) {
   var _keyValue = _slicedToArray(keyValue, 2),
@@ -181,17 +181,5 @@ function modelFactory(schema) {
 
   return Model;
 }
-
-var SYMBOLS = exports.SYMBOLS = {
-  C: C,
-  R: R,
-  U: U,
-  D: D,
-  L: L,
-  SERVICES: SERVICES,
-  METHODS: METHODS,
-  SCHEMA: SCHEMA,
-  DATA: DATA
-};
 
 exports.default = modelFactory;

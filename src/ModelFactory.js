@@ -4,19 +4,19 @@ const ajv = new Ajv({allErrors: true})
 /**
  * Create Symbols to separate library props from data/usage props
  */
-const C = Symbol('CREATE')
-const R = Symbol('READ')
-const U = Symbol('UPDATE')
-const D = Symbol('DELETE')
-const L = Symbol('LIST')
+export const C = Symbol('CREATE')
+export const R = Symbol('READ')
+export const U = Symbol('UPDATE')
+export const D = Symbol('DELETE')
+export const L = Symbol('LIST')
 
 // SERVICES are asyncronous and attached to the Model class
-const SERVICES = Symbol('SERVICES')
+export const SERVICES = Symbol('SERVICES')
 // METHODS are syncronous and bound to each Model instance
-const METHODS = Symbol('METHODS')
-const SCHEMA = Symbol('SCHEMA')
+export const METHODS = Symbol('METHODS')
+export const SCHEMA = Symbol('SCHEMA')
 // The raw data behind our propertyDefinition proxies
-const DATA = Symbol('DATA')
+export const DATA = Symbol('DATA')
 
 function validationReducer (validations, keyValue) {
   const [key, value] = keyValue
@@ -127,18 +127,6 @@ function modelFactory (schema, config = {}) {
   })
 
   return Model
-}
-
-export const SYMBOLS = {
-  C,
-  R,
-  U,
-  D,
-  L,
-  SERVICES,
-  METHODS,
-  SCHEMA,
-  DATA
 }
 
 export default modelFactory
