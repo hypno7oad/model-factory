@@ -53,10 +53,11 @@ function modelFactory (schema, config = {}) {
       this[SCHEMA] = schema
 
       // If there are any methods in the configuration, then bind this to each instance
-      Object.entries(methods, keyValue => {
+      this[METHODS] = Object.entries(methods).reduce((methods, keyValue) => {
         const [key, value] = keyValue
-        this[METHODS][key] = value.bind(this)
-      })
+        methods[key] = value.bind(this)
+        return methods
+      }, {})
 
       Object.entries(properties).forEach(keyValue => {
         const [key, property] = keyValue
@@ -103,10 +104,10 @@ function modelFactory (schema, config = {}) {
 
   /* Wrap every service call, so that they run with the Model as its context
       and all responses being used to instantiate new instances of the Model */
-  Object.entries(services, keyValue => {
+  Model[SERVICES] = Object.entries(services).reduce((services, keyValue) => {
     const [key, value] = keyValue
-    Model[SERVICES][key] = (...args) => value.apply(Model, args).then(instantiator)
-  })
+    services[key] = (...args) => value.apply(Model, args).then(instantiator)
+  }, {})
 
   // Expose any defined CRUDL services at a top level
   Model[C] = Model[SERVICES].create
