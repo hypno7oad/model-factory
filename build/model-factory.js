@@ -28,9 +28,9 @@ var U = Symbol('UPDATE');
 var D = Symbol('DELETE');
 var L = Symbol('LIST');
 
-// SERVICES are asyncronous
+// SERVICES are asyncronous and attached to the Model class
 var SERVICES = Symbol('SERVICES');
-// METHODS are syncronous
+// METHODS are syncronous and bound to each Model instance
 var METHODS = Symbol('METHODS');
 var SCHEMA = Symbol('SCHEMA');
 // The raw data behind our propertyDefinition proxies
@@ -184,7 +184,13 @@ function modelFactory(schema) {
 }
 
 var SYMBOLS = exports.SYMBOLS = {
-  SERVICES: { C: C, R: R, U: U, D: D, L: L },
+  C: C,
+  R: R,
+  U: U,
+  D: D,
+  L: L,
+  SERVICES: SERVICES,
+  METHODS: METHODS,
   SCHEMA: SCHEMA,
   DATA: DATA
 };

@@ -10,9 +10,9 @@ const U = Symbol('UPDATE')
 const D = Symbol('DELETE')
 const L = Symbol('LIST')
 
-// SERVICES are asyncronous
+// SERVICES are asyncronous and attached to the Model class
 const SERVICES = Symbol('SERVICES')
-// METHODS are syncronous
+// METHODS are syncronous and bound to each Model instance
 const METHODS = Symbol('METHODS')
 const SCHEMA = Symbol('SCHEMA')
 // The raw data behind our propertyDefinition proxies
@@ -127,9 +127,15 @@ function modelFactory (schema, config = {}) {
 }
 
 export const SYMBOLS = {
-  SERVICES: {C, R, U, D, L},
-  SCHEMA: SCHEMA,
-  DATA: DATA
+  C,
+  R,
+  U,
+  D,
+  L,
+  SERVICES,
+  METHODS,
+  SCHEMA,
+  DATA
 }
 
 export default modelFactory
