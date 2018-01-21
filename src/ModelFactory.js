@@ -72,16 +72,16 @@ function modelFactory (schema, config = {}) {
               throw new Error(Model.validations[key].errors[0].message)
             }
 
-            // If immutability is configured, then always return a new instance with the desired changes
+            // If immutability is configured, then always replace this[DATA} with a new object
             /* This can be useful in systems like React & Angular, where optimizations can occur
                by dirty checking by identity (===) vs deep equality checks */
             if (isImmutable) {
               const values = {...this[DATA]}
               values[key] = value
-              return new Model(values)
+              this[DATA] = values
+            } else {
+              this[DATA][key] = value
             }
-
-            this[DATA][key] = value
           }
         }
 
