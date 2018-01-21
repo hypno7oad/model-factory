@@ -1,6 +1,6 @@
 {
   "name": "cosmodog-model-factory",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A factory for json-schema validated data model.",
   "main": "./build/model-factory.js",
   "dependencies": {
