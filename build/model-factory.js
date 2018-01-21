@@ -81,7 +81,7 @@ function modelFactory(schema) {
 
     // Expose the raw data
     this[DATA] = Object.create(Model.prototype);
-    // Expose the schema throgh each instance
+    // Expose the schema through each instance
     this[SCHEMA] = schema;
 
     // If there are any methods in the configuration, then bind this to each instance
@@ -118,7 +118,7 @@ function modelFactory(schema) {
           /* This can be useful in systems like React & Angular, where optimizations can occur
              by dirty checking by identity (===) vs deep equality checks */
           if (isImmutable) {
-            var _values = _extends({}, _this[DATA]);
+            var _values = Object.assign(Object.create(Model.prototype), _extends({}, _this[DATA]));
             _values[key] = value;
             _this[DATA] = _values;
           } else {
