@@ -10,48 +10,76 @@ const U = Symbol('UPDATE')
 const D = Symbol('DELETE')
 const L = Symbol('LIST')
 
+// SERVICES are asyncronous
+const SERVICES = Symbol('SERVICES')
+// METHODS are syncronous
+const METHODS = Symbol('METHODS')
 const SCHEMA = Symbol('SCHEMA')
+// The raw data behind our propertyDefinition proxies
 const DATA = Symbol('DATA')
 
-function validationReducer (validations, tuple) {
-  validations[tuple[0]] = ajv.compile(tuple[1])
+function validationReducer (validations, keyValue) {
+  const [key, value] = keyValue
+  validations[key] = ajv.compile(value)
   return validations
 }
-
-const noCreate = () => { throw new ReferenceError('Create service not implemented') }
-const noRead = () => { throw new ReferenceError('Read service not implemented') }
-const noUpdate = () => { throw new ReferenceError('Update service not implemented') }
-const noDelete = () => { throw new ReferenceError('Delete service not implemented') }
-const noList = () => { throw new ReferenceError('List service not implemented') }
 
 function modelFactory (schema, config = {}) {
   if (schema === undefined) throw new ReferenceError('A schema is required')
 
-  const {services = {}} = config
+  const {
+    services = {},
+    methods = {},
+    defaultToUndefined,
+    // This is a function used to transform and return errors instead of throwing Errors
+    onValidationErrors,
+    isImmutable
+  } = config
   const {properties = {}} = schema
 
   class Model {
     constructor (...args) {
       let [values = {}] = args
 
+      // This allows for copying/duplication of instances
       if (values instanceof Model) values = values[DATA]
 
-      // validate the initial values
+      // validate the initial values against the Model's schema
       if (!Model.validate(values)) throw new Error(Model.validate.errors[0].message)
 
+      // Expose the raw data
       this[DATA] = Object.create(Model.prototype)
+      // Expose the schema throgh each instance
       this[SCHEMA] = schema
 
-      Object.entries(properties).forEach(tuple => {
-        const key = tuple[0]
-        const property = tuple[1]
+      // If there are any methods in the configuration, then bind this to each instance
+      Object.entries(methods, keyValue => {
+        const [key, value] = keyValue
+        this[METHODS][key] = value.bind(this)
+      })
+
+      Object.entries(properties).forEach(keyValue => {
+        const [key, property] = keyValue
         const isConst = 'const' in property
         const definition = {
           enumerable: true,
           configurable: false,
           get: isConst ? () => property.const : () => this[DATA][key],
           set: (value) => {
-            if (!Model.validations[key](value)) throw new Error(Model.validations[key].errors[0].message)
+            if (!Model.validations[key](value)) {
+              if (onValidationErrors) return onValidationErrors(Model.validations[key].errors)
+              throw new Error(Model.validations[key].errors[0].message)
+            }
+
+            // If immutability is configured, then always return a new instance with the desired changes
+            /* This can be useful in systems like React & Angular, where optimizations can occur
+               by dirty checking by identity (===) vs deep equality checks */
+            if (isImmutable) {
+              const values = {...this[DATA]}
+              values[key] = value
+              return new Model(values)
+            }
+
             this[DATA][key] = value
           }
         }
@@ -59,39 +87,40 @@ function modelFactory (schema, config = {}) {
         Object.defineProperty(this, key, definition)
       })
 
-      Object.entries(values).forEach(tuple => (this[tuple[0]] = tuple[1]))
+      Object.entries(values).forEach(keyValue => {
+        const [key, value] = keyValue
+        return (this[key] = value)
+      })
     }
   }
 
   Model.validations = Object.entries(properties).reduce(validationReducer, {})
   Model.validate = ajv.compile(schema)
 
-  const instantiator = record => new Model(record)
-  Model[C] = (services.create instanceof Function)
-    ? (...args) => services.create.apply(undefined, args).then(instantiator)
-    : noCreate
+  // If the response is an array, then apply the instantiator across all elements of the array
+  // For non-Array responses, return a new Model using the response as the values parameter
+  const instantiator = response => (response instanceof Array) ? response.map(instantiator) : new Model(response)
 
-  Model[R] = (services.read instanceof Function)
-    ? (...args) => services.read.apply(undefined, args).then(instantiator)
-    : noRead
+  /* Wrap every service call, so that they run with the Model as its context
+      and all responses being used to instantiate new instances of the Model */
+  Object.entries(services, keyValue => {
+    const [key, value] = keyValue
+    Model[SERVICES][key] = (...args) => value.apply(Model, args).then(instantiator)
+  })
 
-  Model[U] = (services.update instanceof Function)
-    ? (...args) => services.update.apply(undefined, args).then(instantiator)
-    : noUpdate
-
-  Model[D] = (services.delete instanceof Function)
-    ? (...args) => services.delete.apply(undefined, args).then(instantiator)
-    : noDelete
-
-  Model[L] = (services.list instanceof Function)
-    ? (...args) => services.list.apply(undefined, args).then(records => records.map(instantiator))
-    : noList
+  // Expose any defined CRUDL services at a top level
+  Model[C] = Model[SERVICES].create
+  Model[R] = Model[SERVICES].read
+  Model[U] = Model[SERVICES].update
+  Model[D] = Model[SERVICES].delete
+  Model[L] = Model[SERVICES].list
 
   Model[SCHEMA] = schema
 
-  Object.entries(properties).forEach(tuple => {
-    if (tuple[1].default) Model.prototype[tuple[0]] = tuple[1].default
-    else if ('defaultToNull' in config) Model.prototype[tuple[0]] = null
+  Object.entries(properties).forEach(keyValue => {
+    const [key, value] = keyValue
+    if (value.default) Model.prototype[key] = value.default
+    else Model.prototype[key] = (defaultToUndefined) ? undefined : null
   })
 
   return Model
