@@ -71,9 +71,6 @@ function modelFactory(schema) {
 
     if (values instanceof Model) values = values[DATA];
 
-    // validate the initial values against the Model's schema
-    if (!Model.validate(values)) throw new Error(Model.validate.errors[0].message);
-
     // Expose the raw data
     this[DATA] = Object.create(Model[DEFAULTS]);
 
@@ -129,7 +126,7 @@ function modelFactory(schema) {
       set: function set(value) {
         if (!Model.validations[key](value)) {
           if (onValidationErrors) return onValidationErrors(Model.validations[key].errors);
-          throw new Error(Model.validations[key].errors[0].message);
+          throw new Error('"' + key + '" ' + Model.validations[key].errors[0].message);
         }
 
         // If immutability is configured, then always replace this[DATA] with a new object
