@@ -72,10 +72,6 @@ function modelFactory(schema) {
 
     if (values instanceof Model) values = values[DATA];
 
-    // Expose the raw data
-    this[DATA] = Object.create(Model[DEFAULTS]);
-    this[ORIGINAL] = this[DATA];
-
     // If there are any methods in the configuration, then bind this to each instance
     this[METHODS] = Object.entries(methods).reduce(function (methods, keyValue) {
       var _keyValue2 = _slicedToArray(keyValue, 2),
@@ -86,6 +82,9 @@ function modelFactory(schema) {
       return methods;
     }, {});
 
+    // Expose the raw data
+    this[DATA] = Object.create(Model[DEFAULTS]);
+
     // Apply all initial values...
     Object.entries(values).forEach(function (keyValue) {
       var _keyValue3 = _slicedToArray(keyValue, 2),
@@ -94,6 +93,10 @@ function modelFactory(schema) {
 
       return _this[key] = value;
     });
+
+    // Keep a local reference to the original DATA object
+    // This is useful for checking if data has changed
+    this[ORIGINAL] = this[DATA];
   };
   // Expose the schema through each instance
 
