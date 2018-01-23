@@ -14,6 +14,8 @@ export const METHODS = Symbol('METHODS')
 export const SCHEMA = Symbol('SCHEMA')
 // The raw data behind our propertyDefinition proxies
 export const DATA = Symbol('DATA')
+// This is the first DATA object, which is useful when comparing if changes have been made
+export const ORIGINAL = Symbol('ORIGINAL')
 // The defaults for every instance
 export const DEFAULTS = Symbol('DEFAULTS')
 
@@ -31,8 +33,7 @@ function modelFactory (schema, config = {}) {
     methods = {},
     defaultToUndefined,
     // This is a function used to transform and return errors instead of throwing Errors
-    onValidationErrors,
-    enforceImmutableData
+    onValidationErrors
   } = config
 
   class Model {
@@ -44,6 +45,7 @@ function modelFactory (schema, config = {}) {
 
       // Expose the raw data
       this[DATA] = Object.create(Model[DEFAULTS])
+      this[ORIGINAL] = this[DATA]
 
       // If there are any methods in the configuration, then bind this to each instance
       this[METHODS] = Object.entries(methods).reduce((methods, keyValue) => {
@@ -87,21 +89,19 @@ function modelFactory (schema, config = {}) {
           throw new Error(`"${key}" ${Model.validations[key].errors[0].message}`)
         }
 
-        // If immutability is configured, then always replace this[DATA] with a new object
-        /* This can be useful in systems like React & Angular, where optimizations can occur
-           by dirty checking by identity (===) vs deep equality checks */
-        if (enforceImmutableData) {
-          // Create a new object
-          const newData = Object.create(Model[DEFAULTS])
-          // Apply all current values to it
-          Object.assign(newData, this[DATA])
-          // Set the newValue for the intended property
-          newData[key] = value
-          // Replace the old data object with the new one
-          this[DATA] = newData
-        } else {
-          this[DATA][key] = value
-        }
+        // If always replace this[DATA] with a new object.
+        // Immutability enables quick shallow checks to see if the data has changed
+        // e.g. this[ORIGINAL] === this[DATA]
+        // This can also be used by systems like Angular and React
+
+        // Create a new object
+        const newData = Object.create(Model[DEFAULTS])
+        // Apply all current values to it
+        Object.assign(newData, this[DATA])
+        // Set the newValue for the intended property
+        newData[key] = value
+        // Replace the old data object with the new one
+        this[DATA] = newData
       }
     }
 

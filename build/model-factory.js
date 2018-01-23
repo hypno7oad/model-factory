@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.DEFAULTS = exports.DATA = exports.SCHEMA = exports.METHODS = exports.L = exports.D = exports.U = exports.R = exports.C = exports.SERVICES = undefined;
+exports.DEFAULTS = exports.ORIGINAL = exports.DATA = exports.SCHEMA = exports.METHODS = exports.L = exports.D = exports.U = exports.R = exports.C = exports.SERVICES = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -30,6 +30,8 @@ var METHODS = exports.METHODS = Symbol('METHODS');
 var SCHEMA = exports.SCHEMA = Symbol('SCHEMA');
 // The raw data behind our propertyDefinition proxies
 var DATA = exports.DATA = Symbol('DATA');
+// This is the first DATA object, which is useful when comparing if changes have been made
+var ORIGINAL = exports.ORIGINAL = Symbol('ORIGINAL');
 // The defaults for every instance
 var DEFAULTS = exports.DEFAULTS = Symbol('DEFAULTS');
 
@@ -52,8 +54,7 @@ function modelFactory(schema) {
       _config$methods = config.methods,
       methods = _config$methods === undefined ? {} : _config$methods,
       defaultToUndefined = config.defaultToUndefined,
-      onValidationErrors = config.onValidationErrors,
-      enforceImmutableData = config.enforceImmutableData;
+      onValidationErrors = config.onValidationErrors;
 
   var Model = function Model() {
     var _this = this;
@@ -73,6 +74,7 @@ function modelFactory(schema) {
 
     // Expose the raw data
     this[DATA] = Object.create(Model[DEFAULTS]);
+    this[ORIGINAL] = this[DATA];
 
     // If there are any methods in the configuration, then bind this to each instance
     this[METHODS] = Object.entries(methods).reduce(function (methods, keyValue) {
@@ -129,21 +131,19 @@ function modelFactory(schema) {
           throw new Error('"' + key + '" ' + Model.validations[key].errors[0].message);
         }
 
-        // If immutability is configured, then always replace this[DATA] with a new object
-        /* This can be useful in systems like React & Angular, where optimizations can occur
-           by dirty checking by identity (===) vs deep equality checks */
-        if (enforceImmutableData) {
-          // Create a new object
-          var newData = Object.create(Model[DEFAULTS]);
-          // Apply all current values to it
-          Object.assign(newData, this[DATA]);
-          // Set the newValue for the intended property
-          newData[key] = value;
-          // Replace the old data object with the new one
-          this[DATA] = newData;
-        } else {
-          this[DATA][key] = value;
-        }
+        // If always replace this[DATA] with a new object.
+        // Immutability enables quick shallow checks to see if the data has changed
+        // e.g. this[ORIGINAL] === this[DATA]
+        // This can also be used by systems like Angular and React
+
+        // Create a new object
+        var newData = Object.create(Model[DEFAULTS]);
+        // Apply all current values to it
+        Object.assign(newData, this[DATA]);
+        // Set the newValue for the intended property
+        newData[key] = value;
+        // Replace the old data object with the new one
+        this[DATA] = newData;
       }
     };
 
