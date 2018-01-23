@@ -182,6 +182,7 @@ function modelFactory(schema) {
 
       return value.apply(Model, args).then(instantiator);
     };
+    return services;
   }, {});
 
   // Expose any defined CRUDL services at a top level

@@ -127,6 +127,7 @@ function modelFactory (schema, config = {}) {
   Model[SERVICES] = Object.entries(services).reduce((services, keyValue) => {
     const [key, value] = keyValue
     services[key] = (...args) => value.apply(Model, args).then(instantiator)
+    return services
   }, {})
 
   // Expose any defined CRUDL services at a top level
