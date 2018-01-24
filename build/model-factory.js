@@ -72,8 +72,16 @@ function modelFactory(schema) {
 
     if (values instanceof Model) values = values[DATA];
 
-    // If there are any methods in the configuration, then bind this to each instance
-    this[METHODS] = Object.entries(methods).reduce(function (methods, keyValue) {
+    // validate the initial values against the Model's schema
+    if (!Model.validate(values)) throw new Error(Model.validate.errors[0].message);
+
+    // If there are any methods in the configuration, then bind each method to this instance
+    this[METHODS] = Object.entries(Object.assign({
+      reset: function reset() {
+        this[DATA] = this[ORIGINAL];
+        return this;
+      }
+    }, methods instanceof Function ? methods(values, schema, config) : methods)).reduce(function (methods, keyValue) {
       var _keyValue2 = _slicedToArray(keyValue, 2),
           key = _keyValue2[0],
           value = _keyValue2[1];
@@ -82,21 +90,10 @@ function modelFactory(schema) {
       return methods;
     }, {});
 
-    // Expose the raw data
-    this[DATA] = Object.create(Model[DEFAULTS]);
-
-    // Apply all initial values...
-    Object.entries(values).forEach(function (keyValue) {
-      var _keyValue3 = _slicedToArray(keyValue, 2),
-          key = _keyValue3[0],
-          value = _keyValue3[1];
-
-      return _this[key] = value;
-    });
-
-    // Keep a local reference to the original DATA object
+    // Expose the raw data & keep a local reference to the original
     // This is useful for checking if data has changed
-    this[ORIGINAL] = this[DATA];
+    this[ORIGINAL] = this[DATA] = Object.create(Model[DEFAULTS]);
+    Object.assign(this[ORIGINAL], values);
   };
   // Expose the schema through each instance
 
@@ -110,9 +107,9 @@ function modelFactory(schema) {
   Model.validate = ajv.compile(schema);
 
   Object.entries(properties).forEach(function (keyValue) {
-    var _keyValue4 = _slicedToArray(keyValue, 2),
-        key = _keyValue4[0],
-        property = _keyValue4[1];
+    var _keyValue3 = _slicedToArray(keyValue, 2),
+        key = _keyValue3[0],
+        property = _keyValue3[1];
 
     var isConst = 'const' in property;
     var definition = {
@@ -154,9 +151,9 @@ function modelFactory(schema) {
   });
 
   Model[DEFAULTS] = Object.entries(properties).reduce(function (defaults, keyValue) {
-    var _keyValue5 = _slicedToArray(keyValue, 2),
-        key = _keyValue5[0],
-        value = _keyValue5[1];
+    var _keyValue4 = _slicedToArray(keyValue, 2),
+        key = _keyValue4[0],
+        value = _keyValue4[1];
 
     if (value.default) defaults[key] = value.default;else defaults[key] = defaultToUndefined ? undefined : null;
     return defaults;
@@ -170,10 +167,10 @@ function modelFactory(schema) {
 
   /* Wrap every service call, so that they run with the Model as its context
       and all responses being used to instantiate new instances of the Model */
-  Model[SERVICES] = Object.entries(services).reduce(function (services, keyValue) {
-    var _keyValue6 = _slicedToArray(keyValue, 2),
-        key = _keyValue6[0],
-        value = _keyValue6[1];
+  Model[SERVICES] = Object.entries(services instanceof Function ? services(schema, config) : services).reduce(function (services, keyValue) {
+    var _keyValue5 = _slicedToArray(keyValue, 2),
+        key = _keyValue5[0],
+        value = _keyValue5[1];
 
     services[key] = function () {
       for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {

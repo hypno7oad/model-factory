@@ -29,7 +29,9 @@ function modelFactory (schema, config = {}) {
   if (schema === undefined) throw new ReferenceError('A schema is required')
 
   const {
+    // Services may be a function that receives the schema and config as props
     services = {},
+    // Methods may be a function that receives the initial values along with the schema and config as props
     methods = {},
     defaultToUndefined,
     // This is a function used to transform and return errors instead of throwing Errors
@@ -43,25 +45,20 @@ function modelFactory (schema, config = {}) {
       // This allows for copying/duplication of instances
       if (values instanceof Model) values = values[DATA]
 
-      // If there are any methods in the configuration, then bind this to each instance
-      this[METHODS] = Object.entries(methods).reduce((methods, keyValue) => {
+      // validate the initial values against the Model's schema
+      if (!Model.validate(values)) throw new Error(Model.validate.errors[0].message)
+
+      // If there are any methods in the configuration, then bind each method to this instance
+      this[METHODS] = Object.entries(methods instanceof Function ? methods(values, schema, config) : methods).reduce((methods, keyValue) => {
         const [key, value] = keyValue
         methods[key] = value.bind(this)
         return methods
       }, {})
 
-      // Expose the raw data
-      this[DATA] = Object.create(Model[DEFAULTS])
-
-      // Apply all initial values...
-      Object.entries(values).forEach(keyValue => {
-        const [key, value] = keyValue
-        return (this[key] = value)
-      })
-
-      // Keep a local reference to the original DATA object
+      // Expose the raw data & keep a local reference to the original
       // This is useful for checking if data has changed
-      this[ORIGINAL] = this[DATA]
+      this[ORIGINAL] = this[DATA] = Object.create(Model[DEFAULTS])
+      Object.assign(this[ORIGINAL], values)
     }
   }
   // Expose the schema through each instance
@@ -124,7 +121,7 @@ function modelFactory (schema, config = {}) {
 
   /* Wrap every service call, so that they run with the Model as its context
       and all responses being used to instantiate new instances of the Model */
-  Model[SERVICES] = Object.entries(services).reduce((services, keyValue) => {
+  Model[SERVICES] = Object.entries(services instanceof Function ? services(schema, config) : services).reduce((services, keyValue) => {
     const [key, value] = keyValue
     services[key] = (...args) => value.apply(Model, args).then(instantiator)
     return services
