@@ -76,12 +76,7 @@ function modelFactory(schema) {
     if (!Model.validate(values)) throw new Error(Model.validate.errors[0].message);
 
     // If there are any methods in the configuration, then bind each method to this instance
-    this[METHODS] = Object.entries(Object.assign({
-      reset: function reset() {
-        this[DATA] = this[ORIGINAL];
-        return this;
-      }
-    }, methods instanceof Function ? methods(values, schema, config) : methods)).reduce(function (methods, keyValue) {
+    this[METHODS] = Object.entries(methods instanceof Function ? methods(values, schema, config) : methods).reduce(function (methods, keyValue) {
       var _keyValue2 = _slicedToArray(keyValue, 2),
           key = _keyValue2[0],
           value = _keyValue2[1];
@@ -94,6 +89,50 @@ function modelFactory(schema) {
     // This is useful for checking if data has changed
     this[ORIGINAL] = this[DATA] = Object.create(Model[DEFAULTS]);
     Object.assign(this[ORIGINAL], values);
+
+    Object.entries(properties).forEach(function (keyValue) {
+      var _keyValue3 = _slicedToArray(keyValue, 2),
+          key = _keyValue3[0],
+          property = _keyValue3[1];
+
+      var isConst = 'const' in property;
+      var definition = {
+        enumerable: true,
+        configurable: false,
+        get: isConst ? function () {
+          return property.const;
+        }
+        // We can't use arrow functions here because "this" would be set to the model-factory module object
+        // We can't use a pre-defined named function either, because the function relies on the closed over 'key' variable
+        : function () {
+          return this[DATA][key];
+        },
+        // We can't use arrow functions here because "this" would be set to the model-factory module object
+        // We can't use a pre-defined named function either, because the function relies on the closed over 'key' variable
+        set: function set(value) {
+          if (!Model.validations[key](value)) {
+            if (onValidationErrors) return onValidationErrors(Model.validations[key].errors);
+            throw new Error('"' + key + '" ' + Model.validations[key].errors[0].message);
+          }
+
+          // If always replace this[DATA] with a new object.
+          // Immutability enables quick shallow checks to see if the data has changed
+          // e.g. this[ORIGINAL] === this[DATA]
+          // This can also be used by systems like Angular and React
+
+          // Create a new object
+          var newData = Object.create(Model[DEFAULTS]);
+          // Apply all current values to it
+          Object.assign(newData, this[DATA]);
+          // Set the newValue for the intended property
+          newData[key] = value;
+          // Replace the old data object with the new one
+          this[DATA] = newData;
+        }
+      };
+
+      Object.defineProperty(_this, key, definition);
+    });
   };
   // Expose the schema through each instance
 
@@ -105,50 +144,6 @@ function modelFactory(schema) {
 
   Model.validations = Object.entries(properties).reduce(validationReducer, {});
   Model.validate = ajv.compile(schema);
-
-  Object.entries(properties).forEach(function (keyValue) {
-    var _keyValue3 = _slicedToArray(keyValue, 2),
-        key = _keyValue3[0],
-        property = _keyValue3[1];
-
-    var isConst = 'const' in property;
-    var definition = {
-      enumerable: true,
-      configurable: false,
-      get: isConst ? function () {
-        return property.const;
-      }
-      // We can't use arrow functions here because "this" would be set to the model-factory module object
-      // We can't use a pre-defined named function either, because the function relies on the closed over 'key' variable
-      : function () {
-        return this[DATA][key];
-      },
-      // We can't use arrow functions here because "this" would be set to the model-factory module object
-      // We can't use a pre-defined named function either, because the function relies on the closed over 'key' variable
-      set: function set(value) {
-        if (!Model.validations[key](value)) {
-          if (onValidationErrors) return onValidationErrors(Model.validations[key].errors);
-          throw new Error('"' + key + '" ' + Model.validations[key].errors[0].message);
-        }
-
-        // If always replace this[DATA] with a new object.
-        // Immutability enables quick shallow checks to see if the data has changed
-        // e.g. this[ORIGINAL] === this[DATA]
-        // This can also be used by systems like Angular and React
-
-        // Create a new object
-        var newData = Object.create(Model[DEFAULTS]);
-        // Apply all current values to it
-        Object.assign(newData, this[DATA]);
-        // Set the newValue for the intended property
-        newData[key] = value;
-        // Replace the old data object with the new one
-        this[DATA] = newData;
-      }
-    };
-
-    Object.defineProperty(Model.prototype, key, definition);
-  });
 
   Model[DEFAULTS] = Object.entries(properties).reduce(function (defaults, keyValue) {
     var _keyValue4 = _slicedToArray(keyValue, 2),

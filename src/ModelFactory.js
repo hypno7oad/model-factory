@@ -59,6 +59,46 @@ function modelFactory (schema, config = {}) {
       // This is useful for checking if data has changed
       this[ORIGINAL] = this[DATA] = Object.create(Model[DEFAULTS])
       Object.assign(this[ORIGINAL], values)
+
+      Object.entries(properties).forEach(keyValue => {
+        const [key, property] = keyValue
+        const isConst = 'const' in property
+        const definition = {
+          enumerable: true,
+          configurable: false,
+          get: isConst
+            ? () => property.const
+            // We can't use arrow functions here because "this" would be set to the model-factory module object
+            // We can't use a pre-defined named function either, because the function relies on the closed over 'key' variable
+            : function () {
+              return this[DATA][key]
+            },
+          // We can't use arrow functions here because "this" would be set to the model-factory module object
+          // We can't use a pre-defined named function either, because the function relies on the closed over 'key' variable
+          set: function (value) {
+            if (!Model.validations[key](value)) {
+              if (onValidationErrors) return onValidationErrors(Model.validations[key].errors)
+              throw new Error(`"${key}" ${Model.validations[key].errors[0].message}`)
+            }
+
+            // If always replace this[DATA] with a new object.
+            // Immutability enables quick shallow checks to see if the data has changed
+            // e.g. this[ORIGINAL] === this[DATA]
+            // This can also be used by systems like Angular and React
+
+            // Create a new object
+            const newData = Object.create(Model[DEFAULTS])
+            // Apply all current values to it
+            Object.assign(newData, this[DATA])
+            // Set the newValue for the intended property
+            newData[key] = value
+            // Replace the old data object with the new one
+            this[DATA] = newData
+          }
+        }
+
+        Object.defineProperty(this, key, definition)
+      })
     }
   }
   // Expose the schema through each instance
@@ -67,46 +107,6 @@ function modelFactory (schema, config = {}) {
   const {properties = {}} = schema
   Model.validations = Object.entries(properties).reduce(validationReducer, {})
   Model.validate = ajv.compile(schema)
-
-  Object.entries(properties).forEach(keyValue => {
-    const [key, property] = keyValue
-    const isConst = 'const' in property
-    const definition = {
-      enumerable: true,
-      configurable: false,
-      get: isConst
-        ? () => property.const
-        // We can't use arrow functions here because "this" would be set to the model-factory module object
-        // We can't use a pre-defined named function either, because the function relies on the closed over 'key' variable
-        : function () {
-          return this[DATA][key]
-        },
-      // We can't use arrow functions here because "this" would be set to the model-factory module object
-      // We can't use a pre-defined named function either, because the function relies on the closed over 'key' variable
-      set: function (value) {
-        if (!Model.validations[key](value)) {
-          if (onValidationErrors) return onValidationErrors(Model.validations[key].errors)
-          throw new Error(`"${key}" ${Model.validations[key].errors[0].message}`)
-        }
-
-        // If always replace this[DATA] with a new object.
-        // Immutability enables quick shallow checks to see if the data has changed
-        // e.g. this[ORIGINAL] === this[DATA]
-        // This can also be used by systems like Angular and React
-
-        // Create a new object
-        const newData = Object.create(Model[DEFAULTS])
-        // Apply all current values to it
-        Object.assign(newData, this[DATA])
-        // Set the newValue for the intended property
-        newData[key] = value
-        // Replace the old data object with the new one
-        this[DATA] = newData
-      }
-    }
-
-    Object.defineProperty(Model.prototype, key, definition)
-  })
 
   Model[DEFAULTS] = Object.entries(properties).reduce((defaults, keyValue) => {
     const [key, value] = keyValue
